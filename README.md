@@ -31,3 +31,8 @@ Typical NDVI values are:
 | 0.2 - 0.4     | sparse vegetation |
 | > 0.4         | dense vegetation  |
 
+
+## Example
+Here I show an example of the NDVI computed around the metropolitan area of Helsinki on date 20 June 2025 (near midsummer). 
+![NDVI around the metropolitan area of Helsinki on 20 June 2026.](https://github.com/lorenzogiombi-hub/satellite_data_analysis_sentinel_2/blob/main/ndvi_map.pdf)
+![Dense vegetation areas around the metropolitan area of Helsinki on 20 June 2026.](https://github.com/lorenzogiombi-hub/satellite_data_analysis_sentinel_2/blob/main/ndvi_vegetation.pdf)
