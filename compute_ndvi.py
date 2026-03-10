@@ -116,5 +116,5 @@ with rasterio.open(output_path, "w", **profile) as dst:
 
 print("NDVI saved to:", output_path)
 
-fig.savefig("ndvi_map.pdf")
-fig_v.savefig("ndvi_vegetation.pdf")
+fig.savefig("ndvi_map.png")
+fig_v.savefig("ndvi_vegetation.png")

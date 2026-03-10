@@ -34,5 +34,5 @@ Typical NDVI values are:
 
 ## Example
 Here I show an example of the NDVI computed around the metropolitan area of Helsinki on date 20 June 2025 (near midsummer). 
-![NDVI around the metropolitan area of Helsinki on 20 June 2026.](https://github.com/lorenzogiombi-hub/satellite_data_analysis_sentinel_2/blob/main/ndvi_map.pdf)
-![Dense vegetation areas around the metropolitan area of Helsinki on 20 June 2026.](https://github.com/lorenzogiombi-hub/satellite_data_analysis_sentinel_2/blob/main/ndvi_vegetation.pdf)
+![NDVI around the metropolitan area of Helsinki on 20 June 2026.](https://github.com/lorenzogiombi-hub/satellite_data_analysis_sentinel_2/blob/main/ndvi_map.png)
+![Dense vegetation areas around the metropolitan area of Helsinki on 20 June 2026.](https://github.com/lorenzogiombi-hub/satellite_data_analysis_sentinel_2/blob/main/ndvi_vegetation.png)
