@@ -1,1 +1,1 @@
-# satellite_data_analysis_sentinel_2
+# Satellite Data Analysis Sentinel_2
