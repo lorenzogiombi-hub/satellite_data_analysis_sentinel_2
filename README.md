@@ -40,4 +40,6 @@ Here I show an example of the NDVI computed around the metropolitan area of Hels
 ### Variation of NDVI across year 2025
 It is interesting to see how the NDVI index changes throughout the year. The following animations show the NDVI index computed from a selected day per month. Days are chosen so that cloud coverage is below 15%. 
 ![](ndvi_timeseries.gif)
+
+Finally we compute the anomaly in the NDVI index. For every frame, this is computed as the difference between the local NDVI and its average across all frame.
 ![](ndvi_anomalies.gif)
