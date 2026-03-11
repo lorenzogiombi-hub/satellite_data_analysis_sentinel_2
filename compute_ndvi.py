@@ -202,3 +202,4 @@ ax_h.grid(True, linestyle="--", alpha=0.4)
 plt.show()
 fig.savefig("ndvi_map.png")
 fig_v.savefig("ndvi_vegetation.png")
+
