@@ -36,3 +36,8 @@ Typical NDVI values are:
 Here I show an example of the NDVI computed around the metropolitan area of Helsinki on date 20 June 2025 (near midsummer). 
 ![NDVI around the metropolitan area of Helsinki on 20 June 2026.](https://github.com/lorenzogiombi-hub/satellite_data_analysis_sentinel_2/blob/main/ndvi_map.png)
 ![Dense vegetation areas around the metropolitan area of Helsinki on 20 June 2026.](https://github.com/lorenzogiombi-hub/satellite_data_analysis_sentinel_2/blob/main/ndvi_vegetation.png)
+
+### Variation of NDVI across year 2025
+It is interesting to see how the NDVI index changes throughout the year. The following animations show the NDVI index computed from a selected day per month. Days are chosen so that cloud coverage is below 15%. 
+![](ndvi_timeseries.gif)
+![](ndvi_anomalies.gif)
