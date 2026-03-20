@@ -1,4 +1,4 @@
-# Satellite Data Analysis Sentinel-2
+# Normalized Difference Vegetation Index with Sentinel-2
 
 This project computes the Normalized Difference Vegetation Index (NDVI) from Sentinel-2 satellite imagery. 
 You can download images and data about your area of interest (AOI) in the open-source dataspace of Copernicus, 
