@@ -1,0 +1,293 @@
+import os
+import numpy as np
+import rasterio
+from rasterio.warp import calculate_default_transform, reproject, Resampling
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import matplotlib as mpl
+from datetime import datetime
+
+# ── Cosmetic parameters ────────────────────────────────────────────────────────
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif')
+font_size = 16
+mpl.rcParams.update({'font.size': font_size, 'lines.linewidth': 1.5,
+                     'axes.linewidth': 1., 'axes.labelsize': font_size+1,
+                     'xtick.labelsize': font_size, 'ytick.labelsize': font_size,
+                     'legend.fontsize': 14})
+
+# ── Paths ──────────────────────────────────────────────────────────────────────
+DATA_FOLDER = "Copernicus_images/Helsinki/2025"
+np.seterr(divide='ignore', invalid='ignore')
+
+# ── Expected boreal phenology for Helsinki (literature values) ─────────────────
+# Source: typical Finnish boreal forest NDVI seasonality
+# These are approximate monthly mean NDVI values for boreal forest near 60°N
+# Used as a sanity-check reference curve, not a strict ground truth
+BOREAL_REFERENCE = {
+    1:  0.10,   # January   — snow covered, dormant
+    2:  0.10,   # February  — snow covered, dormant
+    3:  0.12,   # March     — late winter
+    4:  0.20,   # April     — early green-up
+    5:  0.45,   # May       — rapid green-up
+    6:  0.65,   # June      — near-peak
+    7:  0.70,   # July      — peak growing season
+    8:  0.68,   # August    — late summer
+    9:  0.50,   # September — senescence begins
+    10: 0.25,   # October   — autumn
+    11: 0.12,   # November  — dormant
+    12: 0.10,   # December  — dormant
+}
+
+# ── Helper functions ───────────────────────────────────────────────────────────
+def compute_ndvi(red_path, nir_path):
+    with rasterio.open(red_path) as r:
+        red = r.read(1).astype(np.float32)
+        profile = r.profile
+        bounds = r.bounds
+    with rasterio.open(nir_path) as n:
+        nir = n.read(1).astype(np.float32)
+
+    transform, width, height = calculate_default_transform(
+        profile["crs"], profile["crs"],
+        profile["width"], profile["height"],
+        *bounds, resolution=10
+    )
+    red_r = np.empty((height, width), dtype=np.float32)
+    nir_r = np.empty((height, width), dtype=np.float32)
+
+    reproject(red, red_r,
+              src_transform=profile["transform"], src_crs=profile["crs"],
+              dst_transform=transform,            dst_crs=profile["crs"],
+              resampling=Resampling.bilinear)
+    reproject(nir, nir_r,
+              src_transform=profile["transform"], src_crs=profile["crs"],
+              dst_transform=transform,            dst_crs=profile["crs"],
+              resampling=Resampling.bilinear)
+
+    ndvi = (nir_r - red_r) / (nir_r + red_r)
+
+    # Get pixel size for area calculations
+    pixel_size_m = abs(transform[0])
+    return ndvi, transform, pixel_size_m, profile
+
+
+def parse_date(folder_name):
+    """Parse date from folder name — expects format YYYY_MM_DD or YYYY-MM-DD."""
+    name = folder_name.replace("Helsinki_", "")
+    for fmt in ("%Y_%m_%d", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(name, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def compute_phenology(dates_dt, mean_ndvi_series, threshold=0.4):
+    """
+    Identify key phenological transition dates:
+    - Green-up onset : first date NDVI crosses threshold going up
+    - Peak NDVI      : date of maximum NDVI
+    - Senescence     : first date NDVI drops back below threshold after peak
+    """
+    peak_idx = int(np.argmax(mean_ndvi_series))
+    peak_date = dates_dt[peak_idx]
+    peak_val  = mean_ndvi_series[peak_idx]
+
+    green_up = None
+    for i in range(1, peak_idx + 1):
+        if mean_ndvi_series[i - 1] < threshold <= mean_ndvi_series[i]:
+            green_up = dates_dt[i]
+            break
+
+    senescence = None
+    for i in range(peak_idx, len(mean_ndvi_series) - 1):
+        if mean_ndvi_series[i] >= threshold > mean_ndvi_series[i + 1]:
+            senescence = dates_dt[i + 1]
+            break
+
+    return peak_date, peak_val, green_up, senescence
+
+
+# ── 1. Load all dates ──────────────────────────────────────────────────────────
+dates_str = sorted(f for f in os.listdir(DATA_FOLDER) if not f.startswith('.'))
+ndvi_frames, transforms, dates_dt, pixel_sizes = [], [], [], []
+
+for d in dates_str:
+    folder = os.path.join(DATA_FOLDER, d)
+    red_path = nir_path = None
+    for file in os.listdir(folder):
+        if "B04" in file and file.endswith(".tiff"):
+            red_path = os.path.join(folder, file)
+        if "B08" in file and file.endswith(".tiff"):
+            nir_path = os.path.join(folder, file)
+
+    if red_path is None or nir_path is None:
+        print(f"Skipping {d}: missing B04 or B08")
+        continue
+
+    dt = parse_date(d)
+    if dt is None:
+        print(f"Skipping {d}: could not parse date from folder name")
+        continue
+
+    ndvi, transform, px_m, profile = compute_ndvi(red_path, nir_path)
+    ndvi_frames.append(ndvi)
+    transforms.append(transform)
+    dates_dt.append(dt)
+    pixel_sizes.append(px_m)
+    print(f"Loaded {d}")
+
+print(f"\nLoaded {len(ndvi_frames)} scenes successfully.")
+
+# ── 2. Per-date statistics ─────────────────────────────────────────────────────
+pixel_area_km2 = (pixel_sizes[0] ** 2) / 1e6   # assumes consistent resolution
+
+mean_ndvi    = []
+median_ndvi  = []
+veg_fraction = []
+veg_area_km2 = []
+mean_ndvi_vegetated = []
+
+for ndvi in ndvi_frames:
+    valid = ndvi[np.isfinite(ndvi)]
+    veg   = valid[valid > 0.4]
+    mean_ndvi.append(float(np.nanmean(valid)))
+    median_ndvi.append(float(np.nanmedian(valid)))
+    veg_fraction.append(float(len(veg) / len(valid)) if len(valid) > 0 else np.nan)
+    veg_area_km2.append(float(np.sum(ndvi > 0.4) * pixel_area_km2))
+    mean_ndvi_vegetated.append(float(np.nanmean(veg)) if len(veg) > 0 else np.nan)
+
+mean_ndvi   = np.array(mean_ndvi)
+veg_fraction = np.array(veg_fraction)
+veg_area_km2 = np.array(veg_area_km2)
+
+# ── 3. Phenology metrics ───────────────────────────────────────────────────────
+peak_date, peak_val, green_up, senescence = compute_phenology(
+    dates_dt, mean_ndvi, threshold=0.15
+)
+
+print("\n===== Phenology Summary =====")
+print(f"  Peak NDVI date  : {peak_date.strftime('%Y-%m-%d')}  (mean NDVI = {peak_val:.3f})")
+print(f"  Green-up onset  : {green_up.strftime('%Y-%m-%d') if green_up else 'not detected'}")
+print(f"  Senescence onset: {senescence.strftime('%Y-%m-%d') if senescence else 'not detected'}")
+
+if green_up and senescence:
+    growing_days = (senescence - green_up).days
+    print(f"  Growing season length: {growing_days} days")
+
+# ── 4. Validate against boreal reference curve ────────────────────────────────
+print("\n===== Validation Against Boreal Reference Curve =====")
+residuals = []
+for dt, mn in zip(dates_dt, mean_ndvi):
+    ref = BOREAL_REFERENCE.get(dt.month)
+    if ref is not None:
+        residuals.append(mn - ref)
+        print(f"  {dt.strftime('%Y-%m-%d')}  measured={mn:.3f}  reference={ref:.3f}  diff={mn-ref:+.3f}")
+
+
+rmse = float(np.sqrt(np.mean(np.array(residuals) ** 2)))
+bias = float(np.mean(residuals))
+print(f"\n  RMSE vs boreal reference: {rmse:.3f}")
+print(f"  Bias                    : {bias:+.3f}  ({'overestimate' if bias > 0 else 'underestimate'})")
+
+# ── 5. Print full statistics table ────────────────────────────────────────────
+print("\n===== Per-Date NDVI Statistics =====")
+print(f"{'Date':<14} {'Mean NDVI':>10} {'Median':>8} {'Veg%':>8} {'Veg Area km²':>14} {'Mean NDVI (veg)':>16}")
+print("-" * 75)
+for i, dt in enumerate(dates_dt):
+    print(f"{dt.strftime('%Y-%m-%d'):<14} "
+          f"{mean_ndvi[i]:>10.3f} "
+          f"{median_ndvi[i]:>8.3f} "
+          f"{veg_fraction[i]*100:>7.1f}% "
+          f"{veg_area_km2[i]:>14.1f} "
+          f"{mean_ndvi_vegetated[i]:>16.3f}")
+
+# ── 6. Time series plot with reference curve ──────────────────────────────────
+fig_ts, ax_ts = plt.subplots(figsize=(12, 5))
+
+# Plot measured NDVI
+ax_ts.plot(dates_dt, mean_ndvi, 'o-', color='darkgreen', linewidth=2,
+           markersize=6, label='Measured mean NDVI (Helsinki 2025)')
+
+# Plot ±1 std shading
+ndvi_stack = np.stack(ndvi_frames, axis=0)
+std_ndvi = np.array([float(np.nanstd(f[np.isfinite(f)])) for f in ndvi_frames])
+ax_ts.fill_between(dates_dt,
+                   mean_ndvi - std_ndvi,
+                   mean_ndvi + std_ndvi,
+                   alpha=0.2, color='green', label=r'$\pm 1\sigma$ across pixels')
+
+# Plot boreal reference
+ref_months = sorted(BOREAL_REFERENCE.keys())
+ref_vals   = [BOREAL_REFERENCE[m] for m in ref_months]
+# Map reference months to approximate 2025 dates for plotting
+ref_dates = [datetime(2025, m, 15) for m in ref_months]
+ax_ts.plot(ref_dates, ref_vals, '--', color='gray', linewidth=1.5,
+           label='Boreal reference (literature)')
+
+# Mark phenology events
+if green_up:
+    ax_ts.axvline(green_up,    color='limegreen', linestyle=':', linewidth=1.5,
+                  label=f'Green-up: {green_up.strftime("%b %d")}')
+if peak_date:
+    ax_ts.axvline(peak_date,   color='darkgreen', linestyle=':', linewidth=1.5,
+                  label=f'Peak: {peak_date.strftime("%b %d")} (NDVI={peak_val:.2f})')
+if senescence:
+    ax_ts.axvline(senescence,  color='orange',    linestyle=':', linewidth=1.5,
+                  label=f'Senescence: {senescence.strftime("%b %d")}')
+
+ax_ts.axhline(0.4, color='black', linestyle='--', linewidth=1, alpha=0.4,
+              label='Vegetation threshold (0.15)')
+
+ax_ts.set_xlabel("Date")
+ax_ts.set_ylabel("Mean NDVI")
+ax_ts.set_title("NDVI Seasonal Cycle — Helsinki 2025")
+ax_ts.legend(loc='upper left', fontsize=11)
+ax_ts.grid(True, linestyle='--', alpha=0.4)
+ax_ts.set_ylim(-0.1, 1.0)
+fig_ts.tight_layout()
+fig_ts.savefig("ndvi_timeseries_plot.png", dpi=300)
+print("\nTime series plot saved → ndvi_timeseries_plot.png")
+
+# ── 7. Vegetation area over time ──────────────────────────────────────────────
+fig_va, ax_va = plt.subplots(figsize=(12, 4))
+ax_va.bar([d.strftime('%b %d') for d in dates_dt], veg_area_km2,
+          color='forestgreen', alpha=0.8)
+ax_va.set_xlabel("Date")
+ax_va.set_ylabel(r"Dense Vegetation Area (km$^2$)")
+ax_va.set_title(r"Area with NDVI $>$ 0.4 — Helsinki 2025")
+ax_va.tick_params(axis='x', rotation=45)
+ax_va.grid(True, linestyle='--', alpha=0.4, axis='y')
+fig_va.tight_layout()
+fig_va.savefig("ndvi_vegetation_area.png", dpi=300)
+print("Vegetation area plot saved → ndvi_vegetation_area.png")
+
+# ── 8. Anomaly stack (keep from original) ─────────────────────────────────────
+baseline  = np.nanmean(ndvi_stack, axis=0)
+anomalies = [ndvi - baseline for ndvi in ndvi_frames]
+
+# ── 9. Animations ─────────────────────────────────────────────────────────────
+def save_animation(frames, titles, cmap, vmin, vmax, filename):
+    fig_ani, ax_ani = plt.subplots(figsize=(8, 8))
+    cbar_ax = fig_ani.add_axes([0.88, 0.15, 0.03, 0.7])
+
+    def update(frame):
+        ax_ani.clear(); cbar_ax.clear()
+        im = ax_ani.imshow(frames[frame], cmap=cmap, vmin=vmin, vmax=vmax)
+        ax_ani.set_title(titles[frame]); ax_ani.axis("off")
+        fig_ani.colorbar(im, cax=cbar_ax)
+        return [im]
+
+    ani = animation.FuncAnimation(fig_ani, update, frames=len(frames), interval=800)
+    ani.save(filename, writer="pillow")
+    print(f"Animation saved → {filename}")
+    plt.close(fig_ani)
+
+titles_ndvi     = [f"NDVI — {d.strftime('%Y-%m-%d')}" for d in dates_dt]
+titles_anomaly  = [f"NDVI Anomaly — {d.strftime('%Y-%m-%d')}" for d in dates_dt]
+
+save_animation(ndvi_frames, titles_ndvi,    "RdYlGn", -1,  1,  "ndvi_timeseries.gif")
+save_animation(anomalies,   titles_anomaly, "bwr",    -0.5, 0.5, "ndvi_anomalies.gif")
+
+plt.show()
