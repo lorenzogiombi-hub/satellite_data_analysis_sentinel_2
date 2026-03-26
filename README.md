@@ -4,18 +4,12 @@
 A Python-based pipeline for computing, analysing, and validating the **Normalized Difference Vegetation Index (NDVI)** from Sentinel-2 satellite imagery. Applies time-series analysis across 12 monthly acquisitions, detects seasonal phenological transitions, and validates results against a **MODIS MOD13A3 climatological reference** (2010–2023) extracted via Google Earth Engine.
 
 This project computes the Normalized Difference Vegetation Index (NDVI) from Sentinel-2 satellite imagery. 
-You can download images and data about your area of interest (AOI) in the open-source dataspace of Copernicus, 
-which you can find following this [link](https://dataspace.copernicus.eu).
+You can download images and data about your area of interest (AOI) in the .
 
-### Requirements
-All you need is Python and the following libraries: numpy, matplotlib, and rasterio.
-If you do not have installed them in your machine already, you can install them with:
-```
-pip3 install rasterio numpy matplotlib
-```
 
-## Workflow
-Select your AOI and download Sentinel-2 dataset (raw images as GeoTIFF files).
+
+## Workflow and NDVI explanation
+Select your AOI and download Sentinel-2 dataset (raw images as GeoTIFF files), which you can find in open-source dataspace of [Copernicus](https://dataspace.copernicus.eu).
 Satellite sensors do not just take RGB pictures. Instead, they measure light intensity at many different wavelengths of the electromagnetic spectrum.
 You need two bands, `B04` (RED ~ 665 nm) and `B08` (near infra-red, or NIR ~ 842 nm). 
 Plants absorb red light during photosynthesis, so that healthy vegetation has a low red-light reflectance, while water has very low red-light reflectance, and dry soil medium red-light reflectance. 
@@ -49,7 +43,6 @@ Finally we compute the anomaly in the NDVI index. For every frame, this is compu
 
 
 
----
 ---
 
 
@@ -149,6 +142,12 @@ October vegetation fraction (37.3%, 40.7 km²) is nearly equal to the summer pea
 **5. Cloud-contaminated acquisition automatically identified.**
 March 2025 measured mean NDVI of −0.122 against a MODIS reference of 0.051 ± 0.046 (diff = −0.173). Negative mean NDVI is physically inconsistent with snow-free or partially snow-covered surfaces and indicates residual cloud or wet snow contamination not removed by basic quality screening. A production pipeline would apply the Sentinel-2 **Scene Classification Layer (SCL)** to automatically mask such acquisitions.
 
+
+The extension of vegetated areas (NDVI>4) per each month are shown in this Figure.
+![NDVI vegetation area.](https://github.com/lorenzogiombi-hub/satellite_data_analysis_sentinel_2/blob/main/ndvi_vegetation_area.png)
+
+A comparison between our analysis from Copernicus data and MOD13A3 is finally shown in this Figure.
+![NDVI timeseries plot.](https://github.com/lorenzogiombi-hub/satellite_data_analysis_sentinel_2/blob/main/ndvi_timeseries_plot.png)
 
 ---
 
