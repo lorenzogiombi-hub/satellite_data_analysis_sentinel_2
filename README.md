@@ -1,4 +1,4 @@
-# 🌿 NDVI Vegetation Monitoring Pipeline
+# NDVI Vegetation Monitoring Pipeline
 ### Sentinel-2 Multispectral Analysis — Helsinki, 2025
 
 A Python-based pipeline for computing, analysing, and validating the **Normalized Difference Vegetation Index (NDVI)** from Sentinel-2 satellite imagery. Applies time-series analysis across 12 monthly acquisitions, detects seasonal phenological transitions, and validates results against a **MODIS MOD13A3 climatological reference** (2010–2023) extracted via Google Earth Engine.
