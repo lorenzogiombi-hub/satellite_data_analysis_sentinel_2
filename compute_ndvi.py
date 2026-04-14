@@ -33,6 +33,7 @@ mpl.rcParams.update({'xtick.labelsize': font_size})
 mpl.rcParams.update({'ytick.labelsize': font_size})
 mpl.rcParams.update({'legend.fontsize': 16})
 
+''' Load DATA '''
 
 # Folder containing satellite bands
 DATA_FOLDER = "Copernicus_images/Helsinki/2025/Helsinki_2025_07_17"  # Adjust this path to your data folder
@@ -52,10 +53,9 @@ if red_path is None:
 if nir_path is None:
     raise Exception("Could not find B08 (NIR) band.")
 
-
 # Load satellite bands
 with rasterio.open(red_path) as red_src:
-    red = red_src.read(1).astype(float)  # read the first band and convert to float for calculations
+    red = red_src.read(1).astype(float)  # read the first band and convert to float for calculations. In our case both B04 and B08 only have 1 band. Raterio starts counting from 1, not 0.
     profile = red_src.profile            # copies the geospatial metadata {
                                                                         #  'driver': 'GTiff',         File format (GeoTIFF)
                                                                         #  'dtype': 'uint16',         Data type of pixels
@@ -77,6 +77,9 @@ np.seterr(divide='ignore', invalid='ignore')
 
 
 
+
+
+''' Perform NDVI Analysis '''
 
 # Compute NDVI
 ndvi = (nir - red) / (nir + red)
@@ -116,7 +119,7 @@ ax_v.axis("off")
 ax_v.set_aspect("equal") 
 
 
-plt.show()
+# plt.show()
 
 
 
@@ -131,6 +134,10 @@ plt.show()
 
 # print("NDVI saved to:", output_path)
 
+
+
+
+''' Save Output DATA'''
 
 # Save NDVI with color map (RGB GeoTIFF) for QGIS visualization
 profile.update(dtype=rasterio.float32, count=1) # update the profile to reflect the new data type and number of bands for NDVI output
@@ -158,15 +165,15 @@ colormap = {
 
 profile_cmap = profile.copy()
 profile_cmap.update({
-    "dtype": "uint8",
-    "count": 1
+    "dtype": "uint8",     # The original file uses uint16 (values 0–65535), but ndvi_scaled array is converted to uint8 (values 0–255) 
+    "count": 1            # Specify that it is only one band (same as the input)
 })
 
 with rasterio.open(output_cmap_path, "w", **profile_cmap) as dst:
     dst.write(ndvi_scaled, 1)
     dst.write_colormap(1, colormap)
 
-print("Color‑mapped NDVI saved to:", output_cmap_path)
+print("Color_mapped NDVI saved to:", output_cmap_path)
 
 
 

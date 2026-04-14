@@ -196,10 +196,10 @@ Expects Sentinel-2 GeoTIFF files organised under `Copernicus_images/Helsinki/202
 
 ## Technical Notes
 
-- **Reprojection**: all scenes reprojected to a north-up grid at 10 m native resolution using bilinear resampling before NDVI computation
-- **Vegetation threshold**: NDVI > 0.4 used for vegetated pixel classification; scene-mean phenology detection uses threshold of 0.15 due to urban dilution of scene-mean values
-- **MODIS scale factor**: raw MODIS NDVI values multiplied by 0.0001 to convert to the standard [−1, 1] range
-- **Known limitation**: ~monthly temporal resolution is insufficient to precisely resolve phenological transition dates; green-up onset is estimated within a ~30-day window rather than a specific date
+- **Reprojection**: all scenes reprojected to a north-up grid at 10 m native resolution using bilinear resampling before NDVI computation.
+- **Vegetation threshold**: NDVI > 0.4 used for vegetated pixel classification; scene-mean phenology detection uses threshold of 0.15 due to urban dilution of scene-mean values.
+- **MODIS scale factor**: raw MODIS NDVI values multiplied by 0.0001 to convert to the standard [−1, 1] range.
+- **Known limitation**: ~monthly temporal resolution is insufficient to precisely resolve phenological transition dates; green-up onset is estimated within a ~30-day window rather than a specific date.
 
 ---
 

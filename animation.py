@@ -16,32 +16,34 @@ def compute_ndvi(red_path, nir_path):
     with rasterio.open(nir_path) as n:
         nir = n.read(1).astype(np.float32)
 
-    # Reproject to north-up grid
-    transform, width, height = calculate_default_transform(
-        profile["crs"], profile["crs"],
-        profile["width"], profile["height"],
-        *bounds,
-        resolution=10
-    )
+    # # Reproject to north-up grid
+    # transform, width, height = calculate_default_transform(
+    #     profile["crs"], profile["crs"],
+    #     profile["width"], profile["height"],
+    #     *bounds,
+    #     resolution=10
+    # )
 
-    red_r = np.empty((height, width), dtype=np.float32)
-    nir_r = np.empty((height, width), dtype=np.float32)
+    # red_r = np.empty((height, width), dtype=np.float32)
+    # nir_r = np.empty((height, width), dtype=np.float32)
 
-    reproject(red, red_r,
-              src_transform=profile["transform"],
-              src_crs=profile["crs"],
-              dst_transform=transform,
-              dst_crs=profile["crs"],
-              resampling=Resampling.bilinear)
+    # reproject(red, red_r,
+    #           src_transform=profile["transform"],
+    #           src_crs=profile["crs"],
+    #           dst_transform=transform,
+    #           dst_crs=profile["crs"],
+    #           resampling=Resampling.bilinear)
 
-    reproject(nir, nir_r,
-              src_transform=profile["transform"],
-              src_crs=profile["crs"],
-              dst_transform=transform,
-              dst_crs=profile["crs"],
-              resampling=Resampling.bilinear)
+    # reproject(nir, nir_r,
+    #           src_transform=profile["transform"],
+    #           src_crs=profile["crs"],
+    #           dst_transform=transform,
+    #           dst_crs=profile["crs"],
+    #           resampling=Resampling.bilinear)
 
-    ndvi = (nir_r - red_r) / (nir_r + red_r)
+    # ndvi = (nir_r - red_r) / (nir_r + red_r)
+    ndvi = (nir - red) / (nir + red)
+
     return ndvi, transform
 
 # Collect NDVI frames
@@ -103,10 +105,10 @@ anomalies = [ndvi - baseline for ndvi in ndvi_frames]
 
 # Plot one anomaly map
 from rasterio.plot import show
-idx = 6  # choose which date to visualize
 fig_a, ax_a = plt.subplots(figsize=(8, 8))
 cbar_axa = fig_a.add_axes([0.88, 0.15, 0.03, 0.7])
 
+# idx = 6  # choose which date to visualize
 # show(anomalies[idx], transform=transforms[idx], cmap="bwr", ax=ax_a)
 # ax_a.set_title(f"NDVI Anomaly — {dates[idx]}")
 # ax_a.axis("off")
