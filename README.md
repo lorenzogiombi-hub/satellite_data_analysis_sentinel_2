@@ -137,10 +137,10 @@ Expanding the MODIS reference extraction radius from 2 km to 25 km increases RMS
 Growing season underestimation of 0.08–0.24 NDVI units relative to MODIS is consistent with 1 km MODIS pixels blending vegetated and impervious surfaces, while Sentinel-2 at 10 m resolves them separately. Winter months (January, February, December) show excellent agreement (diff < 0.03) confirming correct radiometric calibration — the growing-season bias is physical, not instrumental.
 
 **4. Evergreen conifer signal detected in autumn.**
-October vegetation fraction (37.3%, 40.7 km²) is nearly equal to the summer peak despite scene-mean NDVI collapsing to 0.043. The mean-median divergence (mean=0.043, median=0.198) reveals that evergreen pine and spruce maintain NDVI > 0.4 through October while deciduous trees senesce, pulling the scene mean down. This urban forest composition signal is not visible in coarser-resolution products.
+October vegetation fraction (37.3%, 40.7 km²) is nearly equal to the summer peak despite scene-mean NDVI collapsing to 0.043. The mean-median divergence (mean=0.043, median=0.198) reveals that evergreen pine and spruce maintain NDVI > 0.4 through October while deciduous trees senesce, pulling the scene mean down.
 
 **5. Cloud-contaminated acquisition automatically identified.**
-March 2025 measured mean NDVI of −0.122 against a MODIS reference of 0.051 ± 0.046 (diff = −0.173). Negative mean NDVI is physically inconsistent with snow-free or partially snow-covered surfaces and indicates residual cloud or wet snow contamination not removed by basic quality screening. A production pipeline would apply the Sentinel-2 **Scene Classification Layer (SCL)** to automatically mask such acquisitions.
+March 2025 measured mean NDVI of −0.122 against a MODIS reference of 0.051 ± 0.046 (diff = −0.173). Negative mean NDVI is physically inconsistent with snow-free or partially snow-covered surfaces and indicates residual cloud or wet snow contamination not removed by basic quality screening. 
 
 
 The extension of vegetated areas (NDVI>4) per each month are shown in this Figure.
