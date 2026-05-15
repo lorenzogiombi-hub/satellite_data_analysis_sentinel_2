@@ -206,5 +206,5 @@ Expects Sentinel-2 GeoTIFF files organised under `Copernicus_images/Helsinki/202
 ## Author
 
 **Lorenzo Giombi, Ph.D.**
-Computational Scientist | SAR/EO Data Scientist
+Computational Scientist 
 [LinkedIn](https://linkedin.com/in/lorenzo-giombi-phd) · [GitHub](https://github.com/lorenzogiombi-hub)
